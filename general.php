@@ -27,8 +27,8 @@
 				echo "Fatal error on line $error_line in file $error_file";
 				echo ", PHP " . PHP_VERSION . " (" . PHP_OS . ")<br />\n";
 				echo "Ending Script...<br />\n";
-	    		die();
-	    		break;
+	    			die();
+	    			break;
 			
 				
 			case E_WARNING:
@@ -44,17 +44,16 @@
 			case E_USER_NOTICE:
 	    		
 				writeToLog("NOTICE: '$error_message' Error on line $error_line in file $error_file");
-				
-	    		echo "<b>NETFEED NOTICE</b> No.[$error_level] $error_message<br />\n";
-	    		echo "Error on line $error_line in file $error_file<br />\n";
-	    		break;
+				echo "<b>NETFEED NOTICE</b> No.[$error_level] $error_message<br />\n";
+	    			echo "Error on line $error_line in file $error_file<br />\n";
+	    			break;
 	
 			default:
 				
 				writeToLog("UNKNOWN THING HAPPENED!: '$error_message' Error on line $error_line in file $error_file");
 				echo "<b>NETFEED Unknown error type:</b> No.[$error_level] $error_message<br />\n";
 				echo "Error on line $error_line in file $error_file<br />\n";
-	    		break;
+	    			break;
 		}
 
 		/* Don't execute PHP internal error handler */
@@ -169,7 +168,5 @@
 	
 	    return $timestamp;
 	}
-
-
 			
 ?>
