@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>NET.Feed</title>
+		<meta name="description" content="HTML5, CSS3, Geoff, Lush" />
+		<link rel="stylesheet" type="text/css" href="stylesheets/reader.css">
+		<script type="text/javascript" src="scripts/netfeed.js"></script>
+		<link rel="shortcut icon" href="images/read.ico" />		
+    </head>
+	<body>
+        <div id="page-header">
+			<div id="mainHeader">
+				<p class="netfeed large" id="header-logo">NET.Feed</p><p id="header-text">&nbsp;RSS Reader</p>
+			</div>
+			<div id="header-filler"></div>
+			<div id="button-bar-wrapper">
+				<div id="button-bar">
+					<div id="buttonsLeft">
+						<div class="btn bSelect">View</div>
+						<div class="btn bCriteria" id="btnView">Unread</div>
+						<div class="buttonSpacer"></div>
+						<div class="btn bSelect">Select</div>
+						<div class="btn bCriteria" id="btnItem">All Articles</div>
+						<div class="buttonSpacer"></div>
+						<div class="btn bSlim bNotHere" id="btnAutoUp">&nbsp;...&nbsp;</div>
+						<div class="buttonSpacer"></div>
+						<!-- <div class="btn bNormal" id="btnTest" onclick="doTest();">TEST</div> -->
+					</div>
+					<div id="buttonsRight">
+						<div class="btn bNormal" id="btnUpdStatus">Mark as Read</div>
+						<div class="buttonSpacer"></div>
+						<div class="btn bNormal" id="btnRefresh">Refresh</div>
+					</div>	
+				</div>
+			</div>
+			<!-- Construct view drop-down menu -->
+	        <div class="drop-down-div-closed" id="view-drop-down" >
+	        </div>
+	        <!-- Construct grp/sub drop-down menu -->
+	        <div class="drop-down-div-closed" id="item-drop-down"></div>
+		</div>
+	        
+        <div id="page-content">
+			<div id="feed-data-wrapper" class="content-visible"></div> 
+        </div>
+        
+        <div  id="page-footer">
+        	
+        	<div id="page-footer-inner">
+	        	<div id="update-status">
+		        	<div id="update-status-text" class="footer-text">-</div>
+		        </div>
+		        <div id="item-count">
+		        	<div id="item-count-text" class="footer-text">-</div>
+		        </div>
+			</div>
+		</div>
+		<div id="debug-process-history" hidden="hidden"></div>
+		<script type="text/javascript">pageSetup();</script>
+    </body>
+</html>
