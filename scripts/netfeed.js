@@ -223,7 +223,6 @@ function getStats() {
 	}
 }
 
-
 /* UNSYNCH'ED */
 
 function displaySubs() {
