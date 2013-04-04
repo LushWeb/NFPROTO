@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Organise</title>
+		<meta name="description" content="HTML5, CSS3, Geoff, Lush" />
+		<link rel="stylesheet" type="text/css" href="stylesheets/netfeed.css">
+		<link rel="stylesheet" type="text/css" href="stylesheets/organise.css">
+		<script type="text/javascript" src="scripts/netfeed.js"></script>
+		<script type="text/javascript" src="scripts/organise.js"></script>
+		<link rel="shortcut icon" href="images/read.ico" />		
+    </head>
+	<body>
+        <div id="page-header">
+			<div id="mainHeader">
+				<p class="netfeed large" id="header-logo"> netFeed </p><p id="header-text">&nbsp; Organise</p>
+				<div class="headerOptions">
+					<div class="hTitle">Options:</div>
+					<div class="hOpt" onclick="loadAppPage('reader');">Reader</div>
+					<div class="hOpt" onclick="loadAppPage('configure');">Configure</div>
+					<div class="hOpt" onclick="loadAppPage('about');">About</div>
+					<div class="hOpt" onclick="loadAppPage('index');">Sign-out</div>
+				</div>
+			</div>
+			<div id="header-filler"></div>
+			<div id="btn-bar-wrapper">
+				<div id="btn-bar">
+					<div id="btns-left">
+						<div class="btn btn-normal" id="btn-subscribe">Subscribe</div>
+						<div class="btn-spacer"></div>
+						<!-- <div class="btn btn-normal" id="btnTest" onclick="doTest();">TEST</div> -->
+					</div>
+					<div id="btns-right">
+						<div class="btn btn-normal" id="btn-save">Save</div>
+					</div>
+				</div>
+			</div>
+		</div>
+        <div id="page-content">
+			<div id="feed-data-wrapper" class="content-visible">
+				<div id="grp-container" class="grp-con"></div>
+				<div id="opt-container" class="opt-con">
+					<div class="option-header">Options:</div>
+					<div class="option">Insert relevant options here....</div>
+					<textarea id="thing" name="stuff" rows=10 cols=60 ></textarea>
+				</div>
+			</div>
+        </div>
+        <div  id="page-footer">
+        	<div id="page-footer-inner">
+	        	<div id="update-status">
+		        	<div id="update-status-text" class="footer-text"> </div>
+		        </div>
+		        <div id="item-count">
+		        	<div id="item-count-text" class="footer-text"> </div>
+		        </div>
+			</div>
+		</div>
+		<script type="text/javascript">pageSetup();</script>
+    </body>
+</html>

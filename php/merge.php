@@ -3,67 +3,60 @@
 	/* NOTE: THIS ROUTINE ONLY CALLED IF THERE IS NEW DATA */
 	require 'general.php';
 	
-	$uID=$_GET["usrID"];
-	$GLOBALS["gUsrID"]=$uID;
+	$uID = $_GET["usrID"];
+	$GLOBALS["gUsrID"] = $uID;
 	
-	$byteCount=0; $oldRecordCount=0; $newRecordCount=0;
+	$byteCount = 0; $oldRecordCount = 0; $newRecordCount = 0;
 	
 	/* LIST OF NEW FEED DATA IS CREATED SUCCESSFULLY */
-	if (createFileList($uID)==TRUE) {
+	if ( createFileList( $uID ) == TRUE ) {
 	
-		writeToLog("INFORMATION: Attempting master update.");
+		writeToLog( "INFORMATION: New data found. Attempting master update..." );
 		
-		$xslConcatFile=realpath("../transforms/concat.xsl");
-		$xmlListFile=realpath("../data/files_$uID.xml");
-		$xmlOutputFile="../data/concat_$uID.xml";
-		$masterFile=realpath("../data/master_$uID.xml");
-		
-		$params=NULL;
-		$outputXML = new DOMDocument("1.0");
-		$outputXML->preserveWhiteSpace=FALSE;
+		$xslConcatFile = realpath( gcFOLDER_TRANSFORM.gcFILE_TRANSFORM_CONCATERNATE );
+		$xmlListFile = realpath( gcFOLDER_DATA."files_$uID.xml" );
+		$xmlOutputFile = gcFOLDER_DATA."concat_$uID.xml";
+		$masterFile = realpath( gcFOLDER_DATA."master_$uID.xml" );
+		$params = NULL;
+		$outputXML = new DOMDocument( "1.0" );
+		$outputXML->preserveWhiteSpace = FALSE;
 		/* DANGER POINT */
-		$outputXML = getTransformedXML($xmlListFile, $xslConcatFile, $params, FALSE);
+		$outputXML = getTransformedXML( $xmlListFile, $xslConcatFile, $params, FALSE );
 		
-		/* IF WE GET NO ERRORS THEN SAVE CONCAT FILE TO DISK */
-		if ($outputXML!=NULL) {
+		/* IF WE GET NO ERRORS THEN ADD UNIOQUE IDS & SAVE CONCAT FILE */
+		if ( $outputXML != NULL ) {
 				
 			/* do loop for setting ids at this point */  
-			$oldRecordCount = getUserArticleCountFromFile($uID);
-			$newRecordCount = addArticleIds($outputXML, $oldRecordCount);
-			writeUserArticleCountToFile($uID, $newRecordCount);
-			
-			/* DEBUG ONLY */
-			//writeToLog("INFORMATION: Old Record Count: $oldRecordCount, New Record Count: $newRecordCount");
-			
-			$outputXML->formatOutput=TRUE;
-			$byteCount = $outputXML->save($xmlOutputFile);
-			$fileSize = $byteCount/1024;
+			$oldRecordCount = getUserArticleCountFromFile( $uID );
+			$newRecordCount = addArticleIds( $outputXML, $oldRecordCount );
+			writeUserArticleCountToFile( $uID, $newRecordCount );
+			$outputXML->formatOutput = TRUE;
+			$byteCount = $outputXML->save( $xmlOutputFile );
+			$fileSize = $byteCount / 1024;
 		
 			 /* UPDATE MASTER FILE WITH CONCAT FILE */	
-			if (file_exists($xmlOutputFile)) {
+			if ( file_exists( $xmlOutputFile ) ) {
 		
-				if (copy($xmlOutputFile, $masterFile)) {
-				
-					unlink($xmlOutputFile);
-					if (updateAllSubDateXML($uID)!=TRUE) {
+				if ( copy( $xmlOutputFile, $masterFile ) ) {
 						
-						writeToLog("ERROR: Unable to update last published dates.");
-					}
-					else {
-						/* DEBUG ONLY */
-						//writeToLog("INFORMATION: Last Published dates written to sub file.");
-					}
+					/* DELETE OLD MASTER FILE */
+					unlink( $xmlOutputFile );
+					if ( updateAllSubDateXML( $uID ) == FALSE ) writeToLog( "ERROR: Unable to update last published dates." );
+					
 				}
 				else {
-					writeToLog("ERROR: Unable to copy concat file to Master.");
+					
+					writeToLog( "ERROR: Unable to copy concat file to Master." );
 				}
 			}	
 			else {
-				writeToLog("ERROR: Missing concat file, Master cannot be updated.");
+				
+				writeToLog( "ERROR: Missing concat file, Master cannot be updated." );
 			}
-			writeToLog("INFORMATION: Master updated. Size: ".number_format($fileSize)." KB");
+			writeToLog( "INFORMATION: Master updated. Size: ".number_format($fileSize)." KB" );
 		}
 		else {
+			
 			writeToLog("ERROR: Concat file transformation failed. Master NOT updated!");
 		}	
 	}
@@ -72,7 +65,7 @@
 	}
 	
 	/* TIDY UP OUTPUT FILES */
-	tidyUp($uID);
+	tidyUp( $uID );
 	
 	/* CONSTRUCT FEEDBACK DATA */
 	header("Content-type: text/xml");
@@ -84,143 +77,129 @@
 
 /* SOME OF THESE FUNCTIONS NEED TIDYING/ERROR CHECKING */
 
-function getUserArticleCountFromFile($usrID){
+function getUserArticleCountFromFile( $pUsrID ){
 	
 	/* GET NUMBER OF ARTICLES FROM FILE */	
-	$recordCount=0;
-	$countFile="../data/mastercount_$usrID.xml";
-	$countXML = getLoadedDOMDoc($countFile);	
-	$counts = $countXML->getElementsByTagName("count");
-	$recordCount=$counts->item(0)->nodeValue;
-	unset($countXML, $counts);
-	return $recordCount;
+	$_recordCount = 0;
+	$_countFile = realpath( gcFOLDER_DATA."mastercount_$pUsrID.xml" );
+	$_countXML = getLoadedDOMDoc( $_countFile );
+	$_recordCount = $_countXML->getElementsByTagName("count")->item(0)->nodeValue;
+	unset( $_countXML );
+	return $_recordCount;
 }
 
-function writeUserArticleCountToFile($usrID, $newCount){
-	
-	$returnValue=FALSE;
-	
-	$countFile="../data/mastercount_$usrID.xml";
-	$countXML = getLoadedDOMDoc($countFile);
-	
-	if ($countXML!=FALSE){
+function writeUserArticleCountToFile( $pUsrID, $pNewCount){
 		
-		$counts = $countXML->getElementsByTagName("count");
-		$counts->item(0)->nodeValue=$newCount;
-		$countXML->save($countFile);
-		$returnValue= TRUE;
-		unset($counts);
+	/* ADD THE NEW HIGHEST UNIQUE ARTICLE ID TO THE MASTERCOUNT FILE */
+	$_returnValue = FALSE;
+	$_countFile = realpath( gcFOLDER_DATA."mastercount_$pUsrID.xml" );
+	$_countXML = getLoadedDOMDoc( $_countFile );
+	
+	if ( $_countXML != FALSE ){
+		
+		$_countXML->getElementsByTagName("count")->item(0)->nodeValue = $pNewCount;
+		$_countXML->save( $_countFile );
+		$_returnValue = TRUE;
 	}
-	unset($countXML);
-	return $returnValue;
+	unset( $_countXML );
+	return $_returnValue;
 }
 
-function addArticleIds($concatXML, $idStartNumber){
+function addArticleIds( $pConcatXML, $pIDStartNumber ){
 	
-	$itemId=$idStartNumber;
-	$items=$concatXML->getElementsByTagName("item");
+	/* ADD A UNIQUE ARTICLE ID TO ALL NEW ARTICLES*/
+	$_itemId = $pIDStartNumber;
+	$_items = $pConcatXML->getElementsByTagName("item");
 	
-	foreach ($items as $item){
+	foreach ( $_items as $_item ){
 		
-		$currentId = $item->getElementsByTagName("item_id")->item(0)->nodeValue;
+		$_currentId = $_item->getElementsByTagName("item_id")->item(0)->nodeValue;
 		
-		if ($currentId == "0") {
+		if ( $_currentId == "0" ) {
 			
-			$itemId++;
-			$item->getElementsByTagName("item_id")->item(0)->nodeValue=$itemId;
+			$_itemId++;
+			$_item->getElementsByTagName("item_id")->item(0)->nodeValue = $_itemId;
 		}
 		else {
 			break;
 		}
 	}
-	unset($items);
-	return $itemId;	
+	unset( $_items );
+	return $_itemId;	
 }
 
-function updateAllSubDateXML($usrID) {
+function updateAllSubDateXML( $pUsrID ) {
 	
 	/* UPDATE ALL SUB_UPDATE FIELDS WITH TEMP VALUES */
 	/* AND RESET TEMPS TO BLANK */
-	$result=FALSE;
-	$subsFile="../data/subs_$usrID.xml";
-	$subsXML = getLoadedDOMDoc($subsFile);
-	$subs = $subsXML->getElementsByTagName('sub');
+	$_result = FALSE;
+	$_subsFile = realpath( gcFOLDER_DATA."subs_$pUsrID.xml" );
+	$_subsXML = getLoadedDOMDoc( $_subsFile );
+	$_subs = $_subsXML->getElementsByTagName("sub");
 	
-	foreach ($subs as $sub){
+	foreach ( $_subs as $_sub ){
 	
-		$sTempUpdate = $sub->getElementsByTagName('sub_temp_update')->item(0)->nodeValue;
-		/* DEBUG ONLY */
-		$sID = $sub->getElementsByTagName('sub_id')->item(0)->nodeValue;
+		$_sTempUpdate = $_sub->getElementsByTagName("sub_temp_update")->item(0)->nodeValue;
 		
-		if ($sTempUpdate!=""){
-			
-			$sub->getElementsByTagName('sub_update')->item(0)->nodeValue=$sTempUpdate;
-			$sub->getElementsByTagName('sub_temp_update')->item(0)->nodeValue="";
-			/* DEBUG ONLY */
-			//writeToLog("INFORMATION: Update date changed: $sTempUpdate for $sID");
-		}
+		if ( $_sTempUpdate != "" ) $_sub->getElementsByTagName("sub_update")->item(0)->nodeValue = $_sTempUpdate;
+	
+		$_sub->getElementsByTagName("sub_temp_update")->item(0)->nodeValue = "";
 	}
 	
-	if ($subsXML->save($subsFile)>0) {
-		
-		$result=TRUE;
-	}
-	unset($subs);
-	return $result;
+	if ( $_subsXML->save($_subsFile) > 0 ) $_result = TRUE;
+	unset( $_subs, $_subsXML );
+	return $_result;
 }
 
-function createFileList($usrID){
-	
-	$returnValue=FALSE;
-	$usrSubFile="../data/subs_$usrID.xml";
-	$usrFileList="../data/files_$usrID.xml";
-	$outputFile="";
-	
-	$handle = fopen($usrFileList, "w");
+function createFileList( $pUsrID ){
+		
+	/* MAKE A LIST OF XML FILES TO BE MERGED WITH THE MASTER FILE */
+	$_returnValue = FALSE;
+	$_usrSubFile = realpath( gcFOLDER_DATA."subs_$pUsrID.xml" );
+	$_usrFileList = gcFOLDER_DATA."files_$pUsrID.xml";
+	$_outputFile = "";
+	$_handle = fopen( $_usrFileList, "w" );
 		
 	/* GET DATA FROM SUBS FILE */
-	$xmlDoc = new DOMDocument();
-	$xmlDoc->load($usrSubFile);
-	$subCount= $xmlDoc->getElementsByTagName('sub')->length;
-	$subItems=$xmlDoc->getElementsByTagName('sub');
+	$_xmlDoc = new DOMDocument();
+	$_xmlDoc->load( $_usrSubFile );
+	$_subCount = $_xmlDoc->getElementsByTagName("sub")->length;
+	$_subItems = $_xmlDoc->getElementsByTagName("sub");
 	
-	fwrite($handle, '<?xml version="1.0" encoding="UTF-8"?>');
-	fwrite($handle, "<files>");
+	fwrite( $_handle, '<?xml version="1.0" encoding="UTF-8"?>');
+	fwrite( $_handle, '<files>');
 
 	/* LOOP THRU' ALL SUBS AND FIND WHICH ONES HAVE AN OUTPUT FILE */	
-	for ($count=0; $count<=$subCount-1; $count++) {
+	for ( $_count = 0; $_count < $_subCount; $_count++ ) {
 		
-		$sID = $subItems->item($count)->getElementsByTagName('sub_id') ->item(0)->childNodes->item(0)->nodeValue;
-		$outputFile="output_".$usrID."_$sID.xml";
+		$_sID = $_subItems->item($_count)->getElementsByTagName("sub_id")->item(0)->childNodes->item(0)->nodeValue;
+		$_outputFile = "output_".$pUsrID."_".$_sID.".xml";
+		if ( file_exists( gcFOLDER_DATA.$_outputFile ) ) fwrite( $_handle, '<file>'.$_outputFile.'</file>' );
 		
-		if (file_exists("../data/$outputFile")) {
-			
-			fwrite($handle, "<file>$outputFile</file>");
-		}
 	}
+	fwrite( $_handle, '<file>master_'.$pUsrID.'.xml</file>' );
+	fwrite( $_handle, '</files>' );
+	fclose( $_handle );
 
-	fwrite($handle, "<file>master_$usrID.xml</file>");
-	fwrite($handle, "</files>");
-	fclose($handle);
-	unset($handle);
-	unset($xmlDoc);
+	unset( $_xmlDoc, $_handle);
 	
-	$returnValue=TRUE;
-	return $returnValue;
+	$_returnValue = TRUE;
+	return $_returnValue;
 }
 
-function tidyUp($uID) {
+function tidyUp( $pUsrID ) {
+		
 	
-	$listFile="../data/files_$uID.xml";
-	$mask = "../data/output_".$uID."_*.xml";
+	$_listFile = gcFOLDER_DATA."files_$pUsrID.xml";
+	$_mask = gcFOLDER_DATA."output_".$pUsrID."_*.xml";
 
 	/* DELETE CONCAT FILE */
-	if (file_exists($listFile)) unlink($listFile);
+	if ( file_exists( $_listFile ) ) unlink( $_listFile );
 
 	/* DELETE UPDATE FILES */
-	foreach (glob($mask) as $outputFileName) {
+	foreach ( glob( $_mask ) as $_outputFileName ) {
 		
-		unlink($outputFileName); 
+		unlink($_outputFileName); 
 	}  
 }
-	
+?>

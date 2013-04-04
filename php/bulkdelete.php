@@ -2,82 +2,81 @@
 
 	require 'general.php';
 	
-	$func=$_GET["func"];
-	$uID=$_GET["usrID"];
-	$subID=$_GET["subID"];
-	$numDays=$_GET["numDays"];
+	$func = $_GET["func"];
+	$uID = $_GET["usrID"];
+	$subID = $_GET["subID"];
+	$numDays = $_GET["numDays"];
 	
-	$GLOBALS["gUsrID"]=$uID;
+	$GLOBALS["gUsrID"] = $uID;
 	
 	switch($func){
 		
 		case "DEL":
-			bulkDeleteAfterDays($uID, $numDays);
+			
+			bulkDeleteAfterDays( $uID, $numDays );
 			break;
+			
 		case "SUBS":
-			bulkDeleteBySub($uID,$subID);
+			
+			bulkDeleteBySub( $uID,$subID );
 			break;
+			
 		default:
-	  		writeToLog("ERROR: [User:$uID] Programmer Error. Unknown command passed to bulkdelete.php");
-	}
-	
-
-// OK done. so where do I put this?
-
-function bulkDeleteBySub($uID, $sID){
-
-	$delCount = 0;
-	$selCrit="sub_id=$sID";
-	$masterFile=realpath("../data/master_$uID.xml");
-	$masterXML = getLoadedDOMDoc($masterFile);
-
-	if ($masterXML) {
-		
-		$xpath = new DOMXPath($masterXML);
-		$nodes = $xpath->query("/items/item[$selCrit]");
-		
-		foreach ($nodes as $node) {
 			
-			$delCount++;
-			deleteNode($node);
+	  		writeToLog( "ERROR: [User:$uID] Programmer Error. Unknown command passed to bulkdelete.php" );
+	}
+	
+function bulkDeleteBySub( $pUsrID, $pSubID ){
+
+	$_delCount = 0;
+	$_selCrit = "sub_id=$pSubID";
+	$_masterFile = realpath( gcFOLDER_DATA."master_$pUsrID.xml" );
+	$_masterXML = getLoadedDOMDoc( $_masterFile );
+
+	if ( $_masterXML ) {
+		
+		$_xpath = new DOMXPath( $_masterXML );
+		$_nodes = $_xpath->query( "/items/item[$selCrit]" );
+		
+		foreach ( $_nodes as $_node ) {
+			
+			$_delCount++;
+			deleteNode( $_node );
 		}
-		$masterXML->save($masterFile);
+		$_masterXML->save( $_masterFile );
 		
 	}
-	unset($masterXML);
-	unset($masterFile);
-	
-	writeToLog("INFORMATION: Bulk delete of $delCount article(s) with a subID of : $sID");
+	unset( $_masterXML, $_masterFile );
+	writeToLog("INFORMATION: Bulk delete of $_delCount article(s) with a subID of : $pSubID");
 	
 }
 
-function bulkDeleteAfterDays($usrID, $numDays) {
+function bulkDeleteAfterDays( $pUsrID, $pNumDays ) {
 	
-	$delCount = 0;
-	$strDate = "- $numDays days";
-	$delDate = date('Ymd', strtotime($strDate));
+	$_delCount = 0;
+	$_strDate = "- $pNumDays days";
+	$_delDate = date("Ymd", strtotime( $_strDate ) );
 	
-	$selCrit="substring(translate(interval, '-',''), 1, 8) < '$delDate' and status=1";
-	$masterFile=realpath("../data/master_$usrID.xml");
-	$masterXML = getLoadedDOMDoc($masterFile);
+	$_selCrit = "substring(translate(interval, '-',''), 1, 8) < '$_delDate' and status=1";
+	$_masterFile = realpath( gcFOLDER_DATA."master_$pUsrID.xml" );
+	$_masterXML = getLoadedDOMDoc( $_masterFile );
 
-	if ($masterXML) {
+	if ( $_masterXML ) {
 		
-		$xpath = new DOMXPath($masterXML);
-		$nodes = $xpath->query("/items/item[$selCrit]");
+		$_xpath = new DOMXPath( $_masterXML );
+		$_nodes = $_xpath->query( "/items/item[$_selCrit]" );
 		
-		foreach ($nodes as $node) {
+		foreach ( $_nodes as $_node ) {
 			
-			$delCount++;
-			deleteNode($node);
+			$_delCount++;
+			deleteNode( $_node );
 		}
-		$masterXML->save($masterFile);
+		$_masterXML->save( $_masterFile );
 		
 	}
-	unset($masterXML);
-	unset($masterFile);
+	unset( $_masterXML, $_masterFile );
 	
-	writeToLog("INFORMATION: Bulk delete of $delCount article(s) with date before : $delDate");
-	echo $delCount;
+	writeToLog("INFORMATION: Bulk delete of $_delCount article(s) with date before : $_delDate");
 }
+
 ?>

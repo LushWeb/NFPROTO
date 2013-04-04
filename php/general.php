@@ -2,8 +2,28 @@
 	
 	/* VARIABLES USED ON ALL PHP SCRIPTS */	
 	$gUsrID;
-	$gLogFileStart = "../data/php_session_";
+	$gProcessDescr = "";
+	
+	/* CONSTANTS */
+	define( "gcFOLDER_TRANSFORM", "../transforms/" );
+	define( "gcFOLDER_DATA", "../data/" );
+	
+	define( "gcFILE_TRANSFORM_DISPLAY_COMPLETE", "displayComplete.xsl" );
+	define( "gcFILE_TRANSFORM_DISPLAY_GRID", "displayGrid.xsl" );
+	define( "gcFILE_TRANSFORM_CONCATERNATE", "doConcaternate.xsl" );
+	define( "gcFILE_TRANSFORM_COUNTS", "getCounts.xsl" );
+	define( "gcFILE_TRANSFORM_SUBS_DATA", "getSubsData.xsl" );
+	define( "gcFILE_TRANSFORM_PROCESS_RSS2", "processRSS2.xsl" );
+	define( "gcFILE_TRANSFORM_PROCESS_ATOM", "processATOM.xsl" );
+	define( "gcFILE_TRANSFORM_PROCESS_RDF", "processRDF.xsl" );
+		
+	define( "gcGRP_FIELD_LEVEL", 0 );
+	define( "gcGRP_FIELD_TYPE", 1 );
+	define( "gcGRP_FIELD_DESCRIPTOR", 2 );
+	
+	$gLogFileStart = gcFOLDER_DATA."php_session_";
 	$gLogFileEnd = ".log";
+	
 	
 	date_default_timezone_set("UTC");
 	set_error_handler("netFeedErrorHandler");
@@ -11,7 +31,7 @@
 	
 function netFeedErrorHandler($error_level, $error_message, $error_file, $error_line, $error_context) {
 	
-    if (!(error_reporting() & $error_level)) {
+    if ( !(error_reporting() & $error_level )) {
     
 		return;
 	}
@@ -31,15 +51,11 @@ function netFeedErrorHandler($error_level, $error_message, $error_file, $error_l
 			
 		case E_WARNING:
 		case E_USER_WARNING:
-			
-			writeToLog("WARNING: '$error_message' Error on line $error_line in file $error_file");
-			break;
-
 		case E_NOTICE:
 		case E_USER_NOTICE:
-    		
-			writeToLog("NOTICE: '$error_message' Error on line $error_line in file $error_file");
-	   		break;
+ 			
+			writeToLog("ERROR: '$error_message' Error on line $error_line in file $error_file");
+			break;
 
 		default:
 			
@@ -49,80 +65,109 @@ function netFeedErrorHandler($error_level, $error_message, $error_file, $error_l
     		break;
 	}
 
-	/* Don't execute PHP internal error handler */
+	/* NO PHP INTERNAL ERROR HANDLER */
 	return true;
 }
 
-function writeToLog($message){
+function writeToLog( $pLogMessage ){
 		
-	$logFileName = $GLOBALS["gLogFileStart"].$GLOBALS["gUsrID"].$GLOBALS["gLogFileEnd"];
-	$handle = fopen($logFileName, "a");
-	$date = date('Y-m-d H:i:s', time());
-	fwrite($handle, "[$date] - $message\r\n");
-	fclose($handle);
-	unset($handle);
+	$_handle = fopen( $GLOBALS["gLogFileStart"].$GLOBALS["gUsrID"].$GLOBALS["gLogFileEnd"], "a" );
+	$_mDate = date( "Y-m-d H:i:s", time() );
+	fwrite( $_handle, "$_mDate | $pLogMessage\r\n" );
+	fclose( $_handle );
+	unset( $_handle );
 }
+function makeSubsArray( $pUsrID ){
+	
+	$_sFile = realpath( gcFOLDER_DATA."subs_$pUsrID.xml" );
+	$_array = array();
+	$_subsXML = getLoadedDOMDoc( $_sFile );
+	$_subs = $_subsXML->getElementsByTagName("sub");
+	
+	foreach ( $_subs as $_sub ){
+	
+		$_sID = $_sub->getElementsByTagName("sub_id")->item(0)->nodeValue;
+		$_sTitle = $_sub->getElementsByTagName("sub_title")->item(0)->nodeValue;
+		array_push( $_array, array( $_sID, $_sTitle ) );
+	}
+	
+	unset( $_subs, $_subsXML, $_sFile );
+	return $_array;
+}
+
+function makeGroupArray( $pUsrID ) {
+	
+	$_sFile = gcFOLDER_DATA."structure_$pUsrID.gwl";
+	$_array = array();
+	$_fHandle = fopen( $_sFile, "r" );
+	
+	if ( $_fHandle != FALSE ) {
+		
+		while (( $_grpData = fgetcsv( $_fHandle, 4096, "|") ) !== FALSE ) {
+	        
+			array_push( $_array, $_grpData );
+  		}
+	}
+	fclose( $_fHandle );
+	unset( $_fHandle );	
+	return $_array;
+}	
 
 function deleteLog() {
 	
-	$logFile = $GLOBALS["gLogFileStart"].$GLOBALS["gUsrID"].$GLOBALS["gLogFileEnd"];
-	if (file_exists($logFile)) unlink($logFile); 
+	$_logFile = $GLOBALS["gLogFileStart"].$GLOBALS["gUsrID"].$GLOBALS["gLogFileEnd"];
+	if ( file_exists($_logFile) ) unlink($_logFile); 
 }
 
-function getTransformedXML($xmlFile, $xslFile, $paramArray, $asXML) {
+function getTransformedXML( $pXMLFile, $pXSLFile, $pParamArray, $pAsXML) {
 	
-	$domXML = getLoadedDOMDoc($xmlFile);
+	$_domXML = getLoadedDOMDoc( $pXMLFile );
 	
-	if ($domXML!=FALSE) {
+	if ( $_domXML != FALSE ) {
 
-		$domXSL = getLoadedDOMDoc($xslFile);
+		$_domXSL = getLoadedDOMDoc( $pXSLFile );
 		
-		if ($domXSL!=FALSE) {
+		if ( $_domXSL != FALSE ) {
 			
-			$xsltProc = new XSLTProcessor;
-			$paramCount=count($paramArray);
+			$_xsltProc = new XSLTProcessor;
+			$_paramCount = count( $pParamArray );
 			
-			for ($i = 0; $i < $paramCount; $i++) {
+			for ( $_i = 0; $_i < $_paramCount; $_i++ ) $_xsltProc->setParameter("", $pParamArray[$_i][0], $pParamArray[$_i][1]); 
+			$_xsltProc->importStyleSheet( $_domXSL );
 			
-				$xsltProc->setParameter("", $paramArray[$i][0], $paramArray[$i][1]);
-			}
-			
-			$xsltProc->importStyleSheet($domXSL);
-			
-			if ($asXML==TRUE) {
+			if ( $pAsXML == TRUE ) {
 					
 				header("Content-type: text/xml");
-				return $xsltProc->transformToXML($domXML);	
+				return $_xsltProc->transformToXML( $_domXML );	
 			}
 			else {
-					
-				// process currently unchecked for errors
-				return $xsltProc->transformToDoc($domXML);
+
+				return $_xsltProc->transformToDoc( $_domXML );
 			}
-			unset($domXSL, $domXML, $xsltProc);
+			unset( $_domXSL, $_domXML, $_xsltProc );
 		}
 		else {
 			
-			unset($domXSL, $domXML);
+			unset( $_domXSL, $_domXML );
 			return FALSE;
 		}
 	}
 	else {
 			
-		unset($domXML);
+		unset($_domXML);
 		return FALSE;
 	}				
 }
 	
-function getLoadedDOMDoc($fileString) {
+function getLoadedDOMDoc( $pFileString ) {
 		
-	$domDoc=new DOMDocument("1.0");
-	$domDoc->preserveWhiteSpace = FALSE;
+	$_domDoc = new DOMDocument( "1.0" );
+	$_domDoc->preserveWhiteSpace = FALSE;
 	
-	if ($domDoc->load($fileString)) {
+	if ( $_domDoc->load( $pFileString )) {
 			
-		$domDoc->formatOutput=TRUE;
-		return $domDoc;	
+		$_domDoc->formatOutput = TRUE;
+		return $_domDoc;	
 	}
 	else {
 		
@@ -138,56 +183,56 @@ function benchMark() {
 	// echo "<div>Routine (s):".($end-$start)."</div>";
 
 }
+function convertRSSDateTime( $pRSSDateTime ) {
+	
+	/* PREVIOUSLY CALLED rsstotime  BUT NOT USED ??? */
 
-function rsstotime($rss_time) {
+    $_day = substr( $pRSSDateTime, 5, 2 );
+    $_month = substr( $pRSSDateTime, 8, 3 );
+    $_month = date( 'm', strtotime( "$_month 1 2011" ) );
+    $_year = substr( $pRSSDateTime, 12, 4 );
+    $_hour = substr( $pRSSDateTime, 17, 2 );
+    $_min = substr( $pRSSDateTime, 20, 2 );
+    $_second = substr( $pRSSDateTime, 23, 2 );
+    $_timeZone = substr( $pRSSDateTime, 26 );
 
-    $day = substr($rss_time, 5, 2);
-    $month = substr($rss_time, 8, 3);
-    $month = date('m', strtotime("$month 1 2011"));
-    $year = substr($rss_time, 12, 4);
-    $hour = substr($rss_time, 17, 2);
-    $min = substr($rss_time, 20, 2);
-    $second = substr($rss_time, 23, 2);
-    $timezone = substr($rss_time, 26);
+    $_timeStamp = mktime( $_hour, $_min, $_second, $_month, $_day, $_year );
 
-    $timestamp = mktime($hour, $min, $second, $month, $day, $year);
-
-    date_default_timezone_set('UTC');
-
-    if(is_numeric($timezone)) {
+    if ( is_numeric( $_timeZone ) ) {
     	
-        $hours_mod = $mins_mod = 0;
-        $modifier = substr($timezone, 0, 1);
-        $hours_mod = (int) substr($timezone, 1, 2);
-        $mins_mod = (int) substr($timezone, 3, 2);
-        $hour_label = $hours_mod>1 ? 'hours' : 'hour';
-        $strtotimearg = $modifier.$hours_mod.' '.$hour_label;
+        $_hoursMod = $_minsMod = 0;
+        $_modifier = substr( $_timeZone, 0, 1 );
+        $_hoursMod = (int) substr( $_timeZone, 1, 2 );
+        $_minsMod = (int) substr( $_timeZone, 3, 2 );
+        $_hourLabel = $_hoursMod > 1 ? "hours" : "hour";
+        $_strToTimeArg = $_modifier.$_hours_mod." ".$_hourLabel;
 		
-        if($mins_mod) {
+        if ( $_minsMod ) {
         	
-            $mins_label = $mins_mod>1 ? 'minutes' : 'minute';
-            $strtotimearg .= ' '.$mins_mod.' '.$mins_label;
+            $_minsLabel = $_minsMod > 1 ? "minutes" : "minute";
+            $_strToTimeArg .= " ".$_minsMod." ".$_minsLabel;
         }
 		
-        $timestamp = strtotime($strtotimearg, $timestamp);
+        $_timeStamp = strtotime( $_strToTimeArg, $_timeStamp );
     }
 
-    return $timestamp;
+    return $_timeStamp;
 }
 
-function deleteNode($node) {
+function deleteNode( $pNode ) {
 	 
-    deleteChildren($node); 
-    $parent = $node->parentNode; 
-    $oldnode = $parent->removeChild($node); 
+    deleteChildren( $pNode ); 
+    $_parent = $pNode->parentNode; 
+    $_oldnode = $_parent->removeChild( $pNode ); 
 } 
 
-function deleteChildren($node) {
+function deleteChildren( $pNode ) {
 	 
-    while (isset($node->firstChild)) { 
-        deleteChildren($node->firstChild); 
-        $node->removeChild($node->firstChild); 
-    } 
+    while ( isset( $pNode->firstChild )) {
+    	 
+        deleteChildren( $pNode->firstChild ); 
+        $pNode->removeChild( $pNode->firstChild ); 
+    }
 }
 		
 ?>

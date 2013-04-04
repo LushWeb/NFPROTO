@@ -2,10 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Reader</title>
+		<title>Configure</title>
 		<meta name="description" content="HTML5, CSS3, Geoff, Lush" />
 		<link rel="stylesheet" type="text/css" href="stylesheets/netfeed.css">
-		<link rel="stylesheet" type="text/css" href="stylesheets/reader.css">
+		<link rel="stylesheet" type="text/css" href="stylesheets/configure.css">
 		<script type="text/javascript" src="scripts/netfeed.js"></script>
 		<script type="text/javascript" src="scripts/reader.js"></script>
 		<link rel="shortcut icon" href="images/read.ico" />		
@@ -13,11 +13,11 @@
 	<body>
         <div id="page-header">
 			<div id="mainHeader">
-				<p class="netfeed large" id="header-logo"> netFeed </p><p id="header-text">&nbsp;Reader</p>
+				<p class="netfeed large" id="header-logo"> netFeed </p><p id="header-text">&nbsp;Configure</p>
 				<div class="headerOptions">
 					<div class="hTitle">Options:</div>
+					<div class="hOpt" onclick="loadAppPage('reader');">Reader</div>
 					<div class="hOpt" onclick="loadAppPage('organise');">Organise</div>
-					<div class="hOpt" onclick="loadAppPage('configure');">Configure</div>
 					<div class="hOpt" onclick="loadAppPage('about');">About</div>
 					<div class="hOpt" onclick="loadAppPage('index');">Sign-out</div>
 				</div>
@@ -26,27 +26,11 @@
 			<div id="btn-bar-wrapper">
 				<div id="btn-bar">
 					<div id="btns-left">
-						<div class="btn btn-select" id="btn-s-status">Status</div>
-						<div class="btn btn-criteria" id="btn-status">Unread</div>
-						<div class="btn-spacer"></div>
-						<div class="btn btn-select" id="btn-s-item">Feeds</div>
-						<div class="btn btn-criteria" id="btn-item">All articles</div>
-						<div class="btn-spacer"></div>
-						<div class="btn btn-slim btn-not-here" id="btn-auto-up">&nbsp;...&nbsp;</div>
-						<div class="btn-spacer"></div>
 					</div>
 					<div id="btns-right">
-						<div class="btn btn-select" id="btn-s-func">Actions</div>
-						<div class="btn btn-criteria" id="btn-func">Mark All as Read</div>
-						<div class="btn btn-normal" id="btn-do-func">Go</div>
-						<div class="btn-spacer"></div>
-						<div class="btn btn-normal" id="btn-refresh">!</div>
 					</div>
 				</div>
 			</div>
-	        <div class="drop-down-div-closed" id="status-drop-down-o"></div>
-	        <div class="drop-down-div-closed" id="item-drop-down-o"></div>
-	        <div class="drop-down-div-closed" id="func-drop-down-o"></div>
 		</div>
         <div id="page-content">
 			<div id="feed-data-wrapper" class="content-visible"></div> 
@@ -61,7 +45,6 @@
 		        </div>
 			</div>
 		</div>
-		<div class="o-mnu-off" id="optionMenu" onmouseout="delayedHideSopt();" onmouseover="keepSopt();"> </div>
-		<script type="text/javascript">pageSetup();</script>
+		<!-- <script type="text/javascript">pageSetup();</script> -->
     </body>
 </html>
